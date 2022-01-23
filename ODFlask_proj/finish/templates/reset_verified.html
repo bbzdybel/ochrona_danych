@@ -1,0 +1,25 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}
+Set up a new Password
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{url_for('.static', filename='signin.css')}}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <form class="form-forgot" method="POST" action="/password_reset_verified/<token>">
+    <h2 class="form-signin-heading">Reset your password</h2>
+    {{ form.hidden_tag() }}
+    {{ wtf.form_field(form.new_password) }}
+      {{ wtf.form_field(form.confirm) }}
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Change your password</button>
+  </form>
+
+</div>
+{% endblock %}
