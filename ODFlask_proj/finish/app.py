@@ -16,10 +16,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from base64 import b64encode, b64decode
 
-# import sqlite3
-# con = sqlite3.connect('C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\database.db')
-# con.cursor()
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
 pepper = b'dfwiubwiubdvbwdbwdvbwuvwdvb'
@@ -277,4 +273,4 @@ def decrypt_value(key, data_to_decrypt):
     return pt.decode('utf-8')
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=('C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\cert.pem', 'C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\key.pem'))
+    app.run(debug=True, ssl_context=('C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\ssl\\cert.pem', 'C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\ssl\\key.pem'))
