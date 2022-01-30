@@ -8,12 +8,11 @@ from Crypto.Util.Padding import unpad, pad
 from flask_mail import Mail, Message
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_bootstrap import Bootstrap
-from flask_wtf import FlaskForm, form
-from werkzeug.debug import console
+from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, EmailField
 from wtforms.validators import InputRequired, Email, Length, DataRequired, ValidationError
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from base64 import b64encode, b64decode
 from bs4 import BeautifulSoup
@@ -23,7 +22,8 @@ app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
 pepper = b'dfwiubwiubdvbwdbwdvbwuvwdvb'
 salt_passManager = b'bardzotajnasoldomieszaniahasel'
 encryption_method = 'pbkdf2:sha256:100000'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\database.db'
+app.config[
+    'SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAIL_SERVER'] = 'smtp.mailtrap.io'
@@ -33,12 +33,12 @@ app.config['MAIL_USERNAME'] = "9089f97df84c67"
 app.config['MAIL_PASSWORD'] = "1a81aa0531dd79"
 mail = Mail(app)
 
-
 bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -47,7 +47,6 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(80))
     salt = db.Column(db.String(32))
     passManager = db.relationship("PassManager", backref='user', lazy=True)
-    passwords_key = db.Column(db.String(80))
 
     def __repr__(self):
         return f" Id: {self.id} \n Username: {self.username} \n Email: {self.email} \n Password: {self.password} \n"
@@ -73,14 +72,16 @@ class PassManager(db.Model):
     password = db.Column(db.String(80))
     userId = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    def __init__(self, appName,login,password, userId):
+    def __init__(self, appName, login, password, userId):
         self.appName = appName
         self.login = login
         self.password = password
         self.userId = userId
 
+
 class ForgotForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email(message='Invalid email'), Length(max=50)])
+
 
 class PasswordResetForm(FlaskForm):
     new_password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=80)])
@@ -104,15 +105,15 @@ def prevent_js(data):
 @app.route('/insert', methods=['POST'])
 @login_required
 def insert():
-
     if request.method == 'POST':
 
         userPasswordFromDash = prevent_js(request.form['password_user'])
         user = User.query.filter_by(username=current_user.username).first()
         if user:
             if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
-            user.password):
-                passwordFromDash = encrypt_value(pad_data(userPasswordFromDash.encode()), prevent_js(request.form['password']))
+                    user.password):
+                passwordFromDash = encrypt_value(pad_data(userPasswordFromDash.encode()),
+                                                 prevent_js(request.form['password']))
                 webappFromDash = prevent_js(request.form['webapp'])
                 loginFromDash = prevent_js(request.form['login'])
                 if not webappFromDash or not loginFromDash or not passwordFromDash:
@@ -127,7 +128,7 @@ def insert():
         return redirect(url_for('dashboard'))
 
 
-@app.route('/update', methods = ['GET', 'POST'])
+@app.route('/update', methods=['GET', 'POST'])
 @login_required
 def update():
     if request.method == 'POST':
@@ -170,10 +171,9 @@ def delete(id):
     return redirect(url_for('dashboard'))
 
 
-@app.route('/deciferpass', methods = ['GET', 'POST'])
+@app.route('/deciferpass', methods=['GET', 'POST'])
 @login_required
 def deciferpass():
-
     if request.method == 'POST':
         userPasswordFromDash = request.form['password_to_the_app']
         user = User.query.filter_by(username=current_user.username).first()
@@ -194,6 +194,7 @@ def deciferpass():
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
 def check_username(form, field):
     user = User.query.filter_by(username=form.username.data).first()
     if user:
@@ -205,13 +206,16 @@ def check_email(form, field):
     if user:
         raise ValidationError("Email already registered")
 
+
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
     remember = BooleanField('remember me')
 
+
 class RegisterForm(FlaskForm):
-    email = StringField('email', validators=[InputRequired(), Email(message='Invalid email'), Length(max=50), check_email])
+    email = StringField('email',
+                        validators=[InputRequired(), Email(message='Invalid email'), Length(max=50), check_email])
     username = StringField('username', validators=[InputRequired(), Length(min=4, max=15), check_username])
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
@@ -228,10 +232,10 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user:
-            if hashlib.pbkdf2_hmac('sha256', form.password.data.encode('utf-8'), user.salt + pepper, 100000) == (user.password):
+            if hashlib.pbkdf2_hmac('sha256', form.password.data.encode('utf-8'), user.salt + pepper, 100000) == (
+            user.password):
                 login_user(user, remember=form.remember.data)
                 return redirect(url_for('dashboard'))
-
 
         return '<h1>Invalid username or password</h1>'
 
@@ -245,7 +249,7 @@ def signup():
     if form.validate_on_submit():
         salt = os.urandom(32)
         hashed_password = hashlib.pbkdf2_hmac('sha256', form.password.data.encode('utf-8'), salt + pepper, 100000)
-        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password, salt=salt, passwords_key=get_key(16))
+        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password, salt=salt)
         db.session.add(new_user)
         db.session.commit()
 
@@ -268,10 +272,10 @@ def dashboard():
 
     for item in passwod_list:
         visible_passwords_list.append(
-            {'id': item.id, 'appName': item.appName, 'login':  item.login,
+            {'id': item.id, 'appName': item.appName, 'login': item.login,
              'password': item.password})
 
-    return render_template('dashboard.html', visible_passwords_list = visible_passwords_list)
+    return render_template('dashboard.html', visible_passwords_list=visible_passwords_list)
 
 
 @app.route('/logout')
@@ -283,7 +287,6 @@ def logout():
 
 @app.route('/reset_verified/<token>', methods=['GET', 'POST'])
 def reset_verified(token):
-
     form = PasswordResetForm()
 
     if form.validate_on_submit():
@@ -301,6 +304,7 @@ def reset_verified(token):
 
     return render_template('reset_verified.html', form=form)
 
+
 def send_email(user):
     token = user.get_reset_token()
 
@@ -311,6 +315,7 @@ def send_email(user):
     msg.html = render_template('reset_your_password.html', user=user, token=token)
 
     mail.send(msg)
+
 
 @app.route('/forgot', methods=['GET', 'POST'])
 def forgot():
@@ -331,7 +336,7 @@ def encrypt_value(key, data_to_encrypt):
     ct_bytes = cipher.encrypt(pad(data_to_encrypt.encode(), AES.block_size))
     iv = b64encode(cipher.iv).decode('utf-8')
     ct = b64encode(ct_bytes).decode('utf-8')
-    result = json.dumps({'iv': iv, 'ciphertext': ct })
+    result = json.dumps({'iv': iv, 'ciphertext': ct})
     return result
 
 
@@ -343,5 +348,6 @@ def decrypt_value(key, data_to_decrypt):
     pt = unpad(cipher.decrypt(ct), AES.block_size)
     return pt.decode('utf-8')
 
+
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=('C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\ssl\\cert.pem', 'C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\ssl\\key.pem'))
+    app.run(host='127.0.0.1', debug=True, ssl_context=('cert.pem', 'key.pem'))
