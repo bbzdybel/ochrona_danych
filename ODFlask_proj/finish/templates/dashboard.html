@@ -42,6 +42,7 @@
 
                             <td>
                                 <a href="/update/{{ row.id }}" class="btn btn-warning btn-xs" data-toggle="modal" data-target="#modaledit{{ row.id }}">Edit</a>
+                                <a href="/deciferpass/{{ row.id }}" class="btn btn-success btn-xs" data-toggle="modal" data-target="#deciferpass{{ row.id }}">Decifer</a>
                                 <a href="/delete/{{row.id}}" class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')">Delete</a>
                             </td>
                         </tr>
@@ -102,6 +103,56 @@
    </div>
 
 </div>
+
+                            <div id="deciferpass{{ row.id }}" class="modal fade" role="dialog">
+   <div class="modal-dialog">
+
+
+      <div class="modal-content">
+
+
+         <div class="modal-header">
+            <h4 class="modal-title">Decifer Password</h4>
+         </div>
+
+
+         <div class="modal-body">
+            <form action="{{ url_for('deciferpass') }}" method="POST">
+
+               <div class="form-group">
+                  <label>The name of the app, whose password you want to decrypt:</label>
+                   <input type="hidden"  name="id" value="{{row.id}}">
+                  <h6 >{{ row.appName }}</h6>
+               </div>
+
+                <div class="form-group">
+                  <label>Password you use to log into the app:</label>
+                  <input type="text" class="form-control" name="password_to_the_app">
+               </div>
+
+
+               <div class="form-group">
+                  <button class="btn btn-primary" type="submit">Decifer</button>
+               </div>
+
+
+            </form>
+
+
+         </div>
+
+
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+         </div>
+
+
+      </div>
+
+
+   </div>
+
+</div>
                         {% endfor %}
 
                     </table>
@@ -135,6 +186,11 @@
                 <div class="form-group">
                   <label>Password:</label>
                   <input type="text" class="form-control" name="password" required="1">
+               </div>
+
+                <div class="form-group">
+                  <label>Password you use to log into the app:</label>
+                  <input type="text" class="form-control" name="password_user" required="1">
                </div>
 
 

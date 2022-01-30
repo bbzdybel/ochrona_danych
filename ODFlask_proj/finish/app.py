@@ -20,6 +20,7 @@ from base64 import b64encode, b64decode
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
 pepper = b'dfwiubwiubdvbwdbwdvbwuvwdvb'
+salt_passManager = b'bardzotajnasoldomieszaniahasel'
 encryption_method = 'pbkdf2:sha256:100000'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -30,8 +31,6 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = "9089f97df84c67"
 app.config['MAIL_PASSWORD'] = "1a81aa0531dd79"
 mail = Mail(app)
-
-
 
 
 bootstrap = Bootstrap(app)
@@ -134,6 +133,15 @@ def delete(id):
         flash("Password Deleted Unsuccessfully")
 
     return redirect(url_for('dashboard'))
+
+@app.route('/deciferpass', methods = ['GET', 'POST'])
+@login_required
+def deciferpass():
+    if request.method == 'POST':
+        flash("Passoword Decifered Successfully")
+
+        return redirect(url_for('dashboard'))
+
 
 @login_manager.user_loader
 def load_user(user_id):
