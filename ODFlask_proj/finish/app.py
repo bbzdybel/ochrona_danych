@@ -16,6 +16,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from base64 import b64encode, b64decode
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
@@ -93,25 +94,35 @@ def pad_data(data):
     return data
 
 
+def prevent_js(data):
+    if bool(BeautifulSoup(data, "html.parser").find()):
+        return ""
+    else:
+        return data
+
+
 @app.route('/insert', methods=['POST'])
 @login_required
 def insert():
 
     if request.method == 'POST':
 
-        userPasswordFromDash = request.form['password_user']
+        userPasswordFromDash = prevent_js(request.form['password_user'])
         user = User.query.filter_by(username=current_user.username).first()
         if user:
             if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
             user.password):
-                passwordFromDash = encrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
-                webappFromDash = request.form['webapp']
-                loginFromDash = request.form['login']
-                my_data = PassManager(webappFromDash, loginFromDash, passwordFromDash, user.id)
-                db.session.add(my_data)
-                db.session.commit()
-                flash("Added new password")
-                return redirect(url_for('dashboard'))
+                passwordFromDash = encrypt_value(pad_data(userPasswordFromDash.encode()), prevent_js(request.form['password']))
+                webappFromDash = prevent_js(request.form['webapp'])
+                loginFromDash = prevent_js(request.form['login'])
+                if not webappFromDash or not loginFromDash or not passwordFromDash:
+                    return redirect(url_for('dashboard'))
+                else:
+                    my_data = PassManager(webappFromDash, loginFromDash, passwordFromDash, user.id)
+                    db.session.add(my_data)
+                    db.session.commit()
+                    flash("Added new password")
+                    return redirect(url_for('dashboard'))
 
         return redirect(url_for('dashboard'))
 
@@ -121,18 +132,24 @@ def insert():
 def update():
     if request.method == 'POST':
 
-        userPasswordFromDash = request.form['password_for_the_app']
+        userPasswordFromDash = prevent_js(request.form['password_for_the_app'])
         user = User.query.filter_by(username=current_user.username).first()
         if user:
             if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
                     user.password):
 
                 my_data = PassManager.query.get(request.form.get('id'))
-                my_data.appName = request.form['webapp']
-                my_data.login = request.form['login']
-                my_data.password = encrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
-                db.session.commit()
-                flash("Passoword Updated Successfully")
+                my_data.appName = prevent_js(request.form['webapp'])
+                my_data.login = prevent_js(request.form['login'])
+                password_before_checking = prevent_js(request.form['password'])
+
+                if not my_data.appName or not my_data.login or not password_before_checking:
+                    return redirect(url_for('dashboard'))
+                else:
+                    my_data.password = encrypt_value(pad_data(userPasswordFromDash.encode()),
+                                                     password_before_checking)
+                    db.session.commit()
+                    flash("Passoword Updated Successfully")
 
         return redirect(url_for('dashboard'))
 
@@ -163,9 +180,12 @@ def deciferpass():
         if user:
             if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
                     user.password):
-                passwordFromDash = decrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
-                flash("Your password to these WebApp is: " + passwordFromDash)
-                return redirect(url_for('dashboard'))
+                if not prevent_js(request.form['password']):
+                    return redirect(url_for('dashboard'))
+                else:
+                    passwordFromDash = decrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
+                    flash("Your password to these WebApp is: " + passwordFromDash)
+                    return redirect(url_for('dashboard'))
 
         return redirect(url_for('dashboard'))
 
@@ -276,7 +296,6 @@ def reset_verified(token):
         hashed_password = salt + '$' + hash
         user.password = hashed_password
         db.session.commit()
-        console.log("success")
         flash('Password changed successfully!')
         return redirect(url_for('login'))
 
