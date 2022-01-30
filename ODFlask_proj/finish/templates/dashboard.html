@@ -77,7 +77,12 @@
 
                 <div class="form-group">
                   <label>Password:</label>
-                  <input type="text" class="form-control" name="password" value="{{ row.password }}">
+                  <input type="text" class="form-control" name="password" >
+               </div>
+
+                <div class="form-group">
+                  <label>Password you use to log into the app:</label>
+                  <input type="password" class="form-control" name="password_for_the_app" >
                </div>
 
 
@@ -122,12 +127,13 @@
                <div class="form-group">
                   <label>The name of the app, whose password you want to decrypt:</label>
                    <input type="hidden"  name="id" value="{{row.id}}">
+                   <input type="hidden"  name="password" value="{{row.password}}">
                   <h6 >{{ row.appName }}</h6>
                </div>
 
                 <div class="form-group">
                   <label>Password you use to log into the app:</label>
-                  <input type="text" class="form-control" name="password_to_the_app">
+                  <input type="password"  class="form-control" name="password_to_the_app">
                </div>
 
 
@@ -190,7 +196,7 @@
 
                 <div class="form-group">
                   <label>Password you use to log into the app:</label>
-                  <input type="text" class="form-control" name="password_user" required="1">
+                  <input type="password" class="form-control" name="password_user" required="1">
                </div>
 
 

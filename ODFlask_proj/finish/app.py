@@ -120,14 +120,19 @@ def insert():
 @login_required
 def update():
     if request.method == 'POST':
-        my_data = PassManager.query.get(request.form.get('id'))
 
-        my_data.appName = request.form['webapp']
-        my_data.login = request.form['login']
-        my_data.password = encrypt_value(current_user.passwords_key, request.form['password'])
+        userPasswordFromDash = request.form['password_for_the_app']
+        user = User.query.filter_by(username=current_user.username).first()
+        if user:
+            if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
+                    user.password):
 
-        db.session.commit()
-        flash("Passoword Updated Successfully")
+                my_data = PassManager.query.get(request.form.get('id'))
+                my_data.appName = request.form['webapp']
+                my_data.login = request.form['login']
+                my_data.password = encrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
+                db.session.commit()
+                flash("Passoword Updated Successfully")
 
         return redirect(url_for('dashboard'))
 
@@ -147,11 +152,20 @@ def delete(id):
 
     return redirect(url_for('dashboard'))
 
+
 @app.route('/deciferpass', methods = ['GET', 'POST'])
 @login_required
 def deciferpass():
+
     if request.method == 'POST':
-        flash("Passoword Decifered Successfully")
+        userPasswordFromDash = request.form['password_to_the_app']
+        user = User.query.filter_by(username=current_user.username).first()
+        if user:
+            if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
+                    user.password):
+                passwordFromDash = decrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
+                flash("Your password to these WebApp is: " + passwordFromDash)
+                return redirect(url_for('dashboard'))
 
         return redirect(url_for('dashboard'))
 
@@ -185,6 +199,7 @@ class RegisterForm(FlaskForm):
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
