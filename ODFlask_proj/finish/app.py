@@ -86,22 +86,35 @@ class PasswordResetForm(FlaskForm):
     confirm = PasswordField('Repeat Password')
 
 
+def pad_data(data):
+    n = AES.block_size - (len(data) % AES.block_size) - 1
+    data += b'\x80'
+    data += b'\x00' * n
+    return data
+
+
 @app.route('/insert', methods=['POST'])
 @login_required
 def insert():
 
     if request.method == 'POST':
-        webappFromDash = request.form['webapp']
-        loginFromDash = request.form['login']
-        userID = current_user.id
-        passwordFromDash = encrypt_value(current_user.passwords_key, request.form['password'])
 
-        my_data = PassManager(webappFromDash,loginFromDash,passwordFromDash, userID)
-        db.session.add(my_data)
-        db.session.commit()
+        userPasswordFromDash = request.form['password_user']
+        user = User.query.filter_by(username=current_user.username).first()
+        if user:
+            if hashlib.pbkdf2_hmac('sha256', userPasswordFromDash.encode('utf-8'), user.salt + pepper, 100000) == (
+            user.password):
+                passwordFromDash = encrypt_value(pad_data(userPasswordFromDash.encode()), request.form['password'])
+                webappFromDash = request.form['webapp']
+                loginFromDash = request.form['login']
+                my_data = PassManager(webappFromDash, loginFromDash, passwordFromDash, user.id)
+                db.session.add(my_data)
+                db.session.commit()
+                flash("Added new password")
+                return redirect(url_for('dashboard'))
 
-        flash("Added new password")
         return redirect(url_for('dashboard'))
+
 
 @app.route('/update', methods = ['GET', 'POST'])
 @login_required
@@ -221,7 +234,7 @@ def dashboard():
     for item in passwod_list:
         visible_passwords_list.append(
             {'id': item.id, 'appName': item.appName, 'login':  item.login,
-             'password': decrypt_value(current_user.passwords_key, item.password)})
+             'password': item.password})
 
     return render_template('dashboard.html', visible_passwords_list = visible_passwords_list)
 
