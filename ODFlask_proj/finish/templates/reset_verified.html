@@ -13,11 +13,11 @@ Set up a new Password
 {% block content %}
 <div class="container">
 
-  <form class="form-forgot" method="POST" action="/password_reset_verified/<token>">
+  <form class="form-forgot" method="POST" action="/reset_verified/<token>">
     <h2 class="form-signin-heading">Reset your password</h2>
     {{ form.hidden_tag() }}
     {{ wtf.form_field(form.new_password) }}
-      {{ wtf.form_field(form.confirm) }}
+      {{ wtf.form_field(form.confirm_new_password) }}
     <button class="btn btn-lg btn-primary btn-block" type="submit">Change your password</button>
   </form>
 

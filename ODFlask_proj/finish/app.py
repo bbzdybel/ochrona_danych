@@ -9,8 +9,9 @@ from flask_mail import Mail, Message
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm, form
+from werkzeug.debug import console
 from wtforms import StringField, PasswordField, BooleanField, EmailField
-from wtforms.validators import InputRequired, Email, Length, DataRequired
+from wtforms.validators import InputRequired, Email, Length, DataRequired, ValidationError
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -20,7 +21,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
 pepper = b'dfwiubwiubdvbwdbwdvbwuvwdvb'
 encryption_method = 'pbkdf2:sha256:100000'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAIL_SERVER'] = 'smtp.mailtrap.io'
@@ -122,10 +123,15 @@ def update():
 @app.route('/delete/<id>/', methods=['GET', 'POST'])
 @login_required
 def delete(id):
-    my_data = PassManager.query.get(id)
-    db.session.delete(my_data)
-    db.session.commit()
-    flash("Password Deleted Successfully")
+    userID = current_user.id
+    try:
+        my_data = PassManager.query.get(id)
+        if my_data.userId == userID:
+            db.session.delete(my_data)
+            db.session.commit()
+            flash("Password Deleted Successfully")
+    except ValueError:
+        flash("Password Deleted Unsuccessfully")
 
     return redirect(url_for('dashboard'))
 
@@ -133,14 +139,25 @@ def delete(id):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def check_username(form, field):
+    user = User.query.filter_by(username=form.username.data).first()
+    if user:
+        raise ValidationError("Username Taken")
+
+
+def check_email(form, field):
+    user = User.query.filter_by(email=form.email.data).first()
+    if user:
+        raise ValidationError("Email already registered")
+
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
     remember = BooleanField('remember me')
 
 class RegisterForm(FlaskForm):
-    email = StringField('email', validators=[InputRequired(), Email(message='Invalid email'), Length(max=50)])
-    username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
+    email = StringField('email', validators=[InputRequired(), Email(message='Invalid email'), Length(max=50), check_email])
+    username = StringField('username', validators=[InputRequired(), Length(min=4, max=15), check_username])
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
 
@@ -161,7 +178,6 @@ def login():
 
 
         return '<h1>Invalid username or password</h1>'
-        # return '<h1>' + form.username.data + ' ' + form.password.data + '</h1>'
 
     return render_template('login.html', form=form)
 
@@ -178,7 +194,6 @@ def signup():
         db.session.commit()
 
         return redirect(url_for('login'))
-        #return '<h1>' + form.username.data + ' ' + form.email.data + ' ' + form.password.data + '</h1>'
 
     return render_template('signup.html', form=form)
 
@@ -210,7 +225,7 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/password_reset_verified/<token>', methods=['GET', 'POST'])
+@app.route('/reset_verified/<token>', methods=['GET', 'POST'])
 def reset_verified(token):
 
     form = PasswordResetForm()
@@ -225,8 +240,9 @@ def reset_verified(token):
         hashed_password = salt + '$' + hash
         user.password = hashed_password
         db.session.commit()
+        console.log("success")
         flash('Password changed successfully!')
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
     return render_template('reset_verified.html', form=form)
 
@@ -273,4 +289,4 @@ def decrypt_value(key, data_to_decrypt):
     return pt.decode('utf-8')
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context=('C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\ssl\\cert.pem', 'C:\\Users\\zdybe\\Desktop\\ODFlask_proj\\finish\\ssl\\key.pem'))
+    app.run(debug=True, ssl_context=('C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\ssl\\cert.pem', 'C:\\Users\\zdybe\\Desktop\\OD\\ochrona_danych\\ODFlask_proj\\finish\\ssl\\key.pem'))
